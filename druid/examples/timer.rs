@@ -204,7 +204,7 @@ fn ui_builder() -> impl Widget<AppData> {
             }
 
             // Targetting ROOT_WIDGET_ID doesn't works
-            ctx.submit_command(CMD_START_TIMER, Target::Global);
+            ctx.submit_command(CMD_START_TIMER, ROOT_WIDGET_ID);
         })
         .fix_height(30.0);
 
@@ -226,7 +226,7 @@ fn ui_builder() -> impl Widget<AppData> {
                 }
             }
             // Targetting ROOT_WIDGET_ID doesn't work
-            ctx.submit_command(CMD_STOP_TIMER, Target::Global);
+            ctx.submit_command(CMD_STOP_TIMER, ROOT_WIDGET_ID);
         })
         .fix_height(30.0);
 
@@ -234,7 +234,7 @@ fn ui_builder() -> impl Widget<AppData> {
         .on_click(|ctx: &mut EventCtx, data: &mut AppData, _| {
             data.timer_state = TimerState::Init;
             // Targetting ROOT_WIDGET_ID doesn't work
-            ctx.submit_command(CMD_STOP_TIMER, Target::Global);
+            ctx.submit_command(CMD_STOP_TIMER, ROOT_WIDGET_ID);
         })
         .fix_height(30.0);
 
