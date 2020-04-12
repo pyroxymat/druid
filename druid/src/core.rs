@@ -97,7 +97,10 @@ pub(crate) struct BaseState {
 
     pub(crate) focus_chain: Vec<WidgetId>,
     pub(crate) request_focus: Option<FocusChange>,
+    #[cfg(not(test))]
     pub(crate) children: Bloom<WidgetId>,
+    #[cfg(test)]
+    pub(crate) children: child_container::ChildContainer,
     pub(crate) children_changed: bool,
 }
 
@@ -561,10 +564,13 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
         // we need to (re)register children in case of one of the following events
         match event {
             LifeCycle::WidgetAdded | LifeCycle::RouteWidgetAdded => {
-                self.state.children_changed = false;
-                ctx.base_state.children = ctx.base_state.children.union(self.state.children);
-                ctx.base_state.focus_chain.extend(&self.state.focus_chain);
-                ctx.register_child(self.id());
+                if self.state.children_changed {
+                    self.state.children_changed = false;
+
+                    ctx.base_state.children = ctx.base_state.children.union(&self.state.children);
+                    ctx.base_state.focus_chain.extend(&self.state.focus_chain);
+                    ctx.register_child(self.id());
+                }
             }
             _ => (),
         }
@@ -628,7 +634,10 @@ impl BaseState {
             request_timer: false,
             request_focus: None,
             focus_chain: Vec::new(),
+            #[cfg(not(test))]
             children: Bloom::new(),
+            #[cfg(test)]
+            children: child_container::ChildContainer::new(),
             children_changed: false,
         }
     }
@@ -656,6 +665,53 @@ impl BaseState {
     /// [`WidgetPod::paint_rect`]: struct.WidgetPod.html#method.paint_rect
     pub(crate) fn paint_rect(&self) -> Rect {
         self.layout_rect + self.paint_insets
+    }
+}
+
+#[cfg(test)]
+mod child_container {
+    use super::*;
+    use std::collections::HashSet;
+
+    #[derive(Debug, Clone)]
+    pub(crate) struct ChildContainer(HashSet<WidgetId>);
+
+    impl ChildContainer {
+        pub fn new() -> ChildContainer {
+            Self(HashSet::new())
+        }
+
+        pub fn entry_count(&self) -> usize {
+            self.0.len()
+        }
+
+        /// Remove all entries from the filter.
+        pub fn clear(&mut self) {
+            self.0.clear();
+        }
+
+        /// Add an item to the filter.
+        pub fn add(&mut self, item: &WidgetId) {
+            self.0.insert(*item);
+        }
+
+        /// Returns `true` if the item may have been added to the filter.
+        ///
+        /// This can return false positives, but never false negatives.
+        /// Thus `true` means that the item may have been added - or not,
+        /// while `false` means that the item has definitely not been added.
+        pub fn may_contain(&self, item: &WidgetId) -> bool {
+            self.0.contains(item)
+        }
+
+        /// Create a new `Bloom` with the items from both filters.
+        pub fn union(&self, other: &ChildContainer) -> ChildContainer {
+            let result = self.clone();
+
+            result.0.union(&other.0);
+
+            result
+        }
     }
 }
 
@@ -694,7 +750,15 @@ mod tests {
 
         let env = Env::default();
 
+        dbg!(&ctx.base_state.children);
         widget.lifecycle(&mut ctx, &LifeCycle::WidgetAdded, &None, &env);
+        dbg!(&ctx.base_state.children);
+        assert!(ctx.base_state.children.may_contain(&ID_1));
+        assert!(ctx.base_state.children.may_contain(&ID_2));
+        assert!(ctx.base_state.children.may_contain(&ID_3));
+        assert_eq!(ctx.base_state.children.entry_count(), 7);
+
+        widget.lifecycle(&mut ctx, &LifeCycle::RouteWidgetAdded, &None, &env);
         assert!(ctx.base_state.children.may_contain(&ID_1));
         assert!(ctx.base_state.children.may_contain(&ID_2));
         assert!(ctx.base_state.children.may_contain(&ID_3));

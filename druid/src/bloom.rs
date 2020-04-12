@@ -82,7 +82,7 @@ impl<T: ?Sized + Hash> Bloom<T> {
     }
 
     /// Create a new `Bloom` with the items from both filters.
-    pub fn union(&self, other: Bloom<T>) -> Bloom<T> {
+    pub fn union(&self, other: &Bloom<T>) -> Bloom<T> {
         Bloom {
             bits: self.bits | other.bits,
             data: PhantomData,
@@ -157,7 +157,7 @@ mod tests {
         assert!(!bloom2.may_contain(&0));
         assert!(!bloom2.may_contain(&1));
 
-        let bloom3 = bloom1.union(bloom2);
+        let bloom3 = bloom1.union(&bloom2);
         assert!(bloom3.may_contain(&0));
         assert!(bloom3.may_contain(&1));
         assert!(bloom3.may_contain(&2));

@@ -18,15 +18,15 @@ use druid::widget::{Button, Flex, Label, MainAxisAlignment, Painter};
 use druid::{
     theme, AppLauncher, BoxConstraints, Color, Data, Env, Event, EventCtx, LayoutCtx, Lens,
     LifeCycle, LifeCycleCtx, LocalizedString, PaintCtx, PlatformError, RenderContext, Selector,
-    Size, Target, TimerToken, UpdateCtx, Widget, WidgetExt, WidgetId, WindowDesc,
+    Size, TimerToken, UpdateCtx, Widget, WidgetExt, WidgetId, WindowDesc,
 };
 use std::time::{Duration, Instant};
 
 const TIMER_UPDATE_DELAY: Duration = Duration::from_millis(50);
 
 const ROOT_WIDGET_ID: WidgetId = WidgetId::reserved(1);
-const CMD_START_TIMER: Selector = Selector::new("start_paint_timer");
-const CMD_STOP_TIMER: Selector = Selector::new("stop_paint_timer");
+const CMD_START_TIMER: Selector = Selector::new("start_timer");
+const CMD_STOP_TIMER: Selector = Selector::new("stop_timer");
 
 #[derive(Clone, Debug, PartialEq)]
 enum TimerState {
@@ -44,9 +44,9 @@ enum TimerState {
 #[derive(Clone, Lens, Data)]
 struct AppData {
     text: String,
-    #[druid(same_fn = "PartialEq::eq")]
+    #[data(same_fn = "PartialEq::eq")]
     duration: Duration,
-    #[druid(same_fn = "PartialEq::eq")]
+    #[data(same_fn = "PartialEq::eq")]
     timer_state: TimerState,
 }
 
