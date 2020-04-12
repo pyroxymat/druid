@@ -564,13 +564,10 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
         // we need to (re)register children in case of one of the following events
         match event {
             LifeCycle::WidgetAdded | LifeCycle::RouteWidgetAdded => {
-                if self.state.children_changed {
-                    self.state.children_changed = false;
-
-                    ctx.base_state.children = ctx.base_state.children.union(&self.state.children);
-                    ctx.base_state.focus_chain.extend(&self.state.focus_chain);
-                    ctx.register_child(self.id());
-                }
+                self.state.children_changed = false;
+                ctx.base_state.children = ctx.base_state.children.union(&self.state.children);
+                ctx.base_state.focus_chain.extend(&self.state.focus_chain);
+                ctx.register_child(self.id());
             }
             _ => (),
         }
